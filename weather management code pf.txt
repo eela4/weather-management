@@ -1,0 +1,247 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_CITIES 100
+#define NAME_LEN 30
+#define CONDITION_LEN 20
+
+typedef struct {
+    char name[NAME_LEN];
+    float temperature;
+    float humidity;
+    float wind_speed;
+    char condition[CONDITION_LEN];
+} Weather;
+
+Weather weather[MAX_CITIES];
+int count = 0;
+
+// Function declarations
+void addWeatherRecord();
+void viewWeatherRecords();
+void updateWeatherRecord();
+void deleteWeatherRecord();
+void calculateAverageTemperature();
+void displayWeatherSummary();
+int findRecordIndex(char name[]);
+void removeNewline(char str[]);
+int stricmp(const char *s1, const char *s2); // Case-insensitive compare
+
+int main() {
+    int choice;
+    while (1) {
+        printf("\nWeather Management System\n");
+        printf("1. Add Weather Record\n");
+        printf("2. View Weather Records\n");
+        printf("3. Update Weather Record\n");
+        printf("4. Delete Weather Record\n");
+        printf("5. Average Temperature\n");
+        printf("6. Weather Summary\n");
+        printf("7. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar();  // Consume newline
+
+        switch (choice) {
+            case 1:
+                addWeatherRecord();
+                break;
+            case 2:
+                viewWeatherRecords();
+                break;
+            case 3:
+                updateWeatherRecord();
+                break;
+            case 4:
+                deleteWeatherRecord();
+                break;
+            case 5:
+                calculateAverageTemperature();
+                break;
+            case 6:
+                displayWeatherSummary();
+                break;
+            case 7:
+                printf("Exiting program.\n");
+                return 0;
+            default:
+                printf("Invalid choice.\n");
+        }
+    }
+    return 0;
+}
+
+// Function to remove newline from fgets input
+void removeNewline(char str[]) {
+    int i;
+    for (i = 0; str[i]; i++) {
+        if (str[i] == '\n') {
+            str[i] = '\0';
+            break;
+        }
+    }
+}
+
+// Case-insensitive string comparison (Windows-compatible)
+int stricmp(const char *s1, const char *s2) {
+    while (*s1 && *s2) {
+        if (tolower(*s1) != tolower(*s2))
+            return (tolower(*s1) - tolower(*s2));
+        s1++;
+        s2++;
+    }
+    return (tolower(*s1) - tolower(*s2));
+}
+
+void addWeatherRecord() {
+    if (count >= MAX_CITIES) {
+        printf("Weather record limit reached.\n");
+        return;
+    }
+
+    printf("\nEnter name of city/region: ");
+    fgets(weather[count].name, NAME_LEN, stdin);
+    removeNewline(weather[count].name);
+
+    printf("Enter temperature (°C): ");
+    scanf("%f", &weather[count].temperature);
+
+    printf("Enter humidity (%%): ");
+    scanf("%f", &weather[count].humidity);
+
+    printf("Enter wind speed (km/h): ");
+    scanf("%f", &weather[count].wind_speed);
+    getchar();
+
+    printf("Enter weather condition (Sunny, Rainy, Cloudy, etc.): ");
+    fgets(weather[count].condition, CONDITION_LEN, stdin);
+    removeNewline(weather[count].condition);
+
+    count++;
+    printf("Record added successfully.\n");
+}
+
+void viewWeatherRecords() {
+    int i;
+    if (count == 0) {
+        printf("No records to display.\n");
+        return;
+    }
+
+    printf("\n%-20s%-12s%-12s%-15s%-15s\n", "City", "Temp (°C)", "Humidity (%)", "Wind (km/h)", "Condition");
+    for (i = 0; i < count; i++) {
+        printf("%-20s%-12.2f%-12.2f%-15.2f%-15s\n",
+               weather[i].name,
+               weather[i].temperature,
+               weather[i].humidity,
+               weather[i].wind_speed,
+               weather[i].condition);
+    }
+}
+
+int findRecordIndex(char name[]) {
+    int i;
+    for (i = 0; i < count; i++) {
+        if (strcmp(weather[i].name, name) == 0)
+            return i;
+    }
+    return -1;
+}
+
+void updateWeatherRecord() {
+    char name[NAME_LEN];
+    int index;
+
+    printf("\nEnter name of city/region to update: ");
+    fgets(name, NAME_LEN, stdin);
+    removeNewline(name);
+
+    index = findRecordIndex(name);
+    if (index == -1) {
+        printf("Record not found.\n");
+        return;
+    }
+
+    printf("Enter new temperature (°C): ");
+    scanf("%f", &weather[index].temperature);
+    printf("Enter new humidity (%%): ");
+    scanf("%f", &weather[index].humidity);
+    printf("Enter new wind speed (km/h): ");
+    scanf("%f", &weather[index].wind_speed);
+    getchar();
+    printf("Enter new weather condition: ");
+    fgets(weather[index].condition, CONDITION_LEN, stdin);
+    removeNewline(weather[index].condition);
+
+    printf("Record updated.\n");
+}
+
+void deleteWeatherRecord() {
+    char name[NAME_LEN];
+    int index, i;
+
+    printf("\nEnter name of city/region to delete: ");
+    fgets(name, NAME_LEN, stdin);
+    removeNewline(name);
+
+    index = findRecordIndex(name);
+    if (index == -1) {
+        printf("Record not found.\n");
+        return;
+    }
+
+    for (i = index; i < count - 1; i++) {
+        weather[i] = weather[i + 1];
+    }
+    count--;
+    printf("Record deleted.\n");
+}
+
+void calculateAverageTemperature() {
+    float sum = 0.0;
+    int i;
+
+    if (count == 0) {
+        printf("No records available.\n");
+        return;
+    }
+
+    for (i = 0; i < count; i++) {
+        sum += weather[i].temperature;
+    }
+    printf("Average Temperature: %.2f °C\n", sum / count);
+}
+
+void displayWeatherSummary() {
+    float max_temp, min_temp, sum_humidity = 0.0, sum_wind = 0.0;
+    int i, rainy_count = 0, sunny_count = 0, cloudy_count = 0;
+
+    if (count == 0) {
+        printf("No records to analyze.\n");
+        return;
+    }
+
+    max_temp = min_temp = weather[0].temperature;
+
+    for (i = 0; i < count; i++) {
+        if (weather[i].temperature > max_temp) max_temp = weather[i].temperature;
+        if (weather[i].temperature < min_temp) min_temp = weather[i].temperature;
+
+        sum_humidity += weather[i].humidity;
+        sum_wind += weather[i].wind_speed;
+
+        if (stricmp(weather[i].condition, "Rainy") == 0) rainy_count++;
+        else if (stricmp(weather[i].condition, "Sunny") == 0) sunny_count++;
+        else if (stricmp(weather[i].condition, "Cloudy") == 0) cloudy_count++;
+    }
+
+    printf("\nWeather Summary:\n");
+    printf("Highest Temperature: %.2f °C\n", max_temp);
+    printf("Lowest Temperature: %.2f °C\n", min_temp);
+    printf("Average Humidity: %.2f %%\n", sum_humidity / count);
+    printf("Average Wind Speed: %.2f km/h\n", sum_wind / count);
+    printf("Cities with Rainy weather: %d\n", rainy_count);
+    printf("Cities with Sunny weather: %d\n", sunny_count);
+    printf("Cities with Cloudy weather: %d\n", cloudy_count);
+}
